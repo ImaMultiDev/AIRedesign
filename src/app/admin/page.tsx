@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { AdminDashboard, type AdminShowcaseRow } from "./admin-dashboard";
+import { AdminDashboard } from "./admin-dashboard";
+import type { AdminShowcaseRow } from "@/types/admin-showcase";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -22,6 +23,9 @@ export default async function AdminPage() {
       description: r.description,
       beforeUrl: r.beforeUrl,
       afterUrl: r.afterUrl,
+      beforePublicId: r.beforePublicId,
+      afterPublicId: r.afterPublicId,
+      isActive: r.isActive,
     }));
   } catch {
     /* sin DATABASE_URL o sin migraciones */

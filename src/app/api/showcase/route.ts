@@ -53,6 +53,9 @@ export async function POST(request: Request) {
     });
     const sortOrder = (last?.sortOrder ?? 0) + 1;
 
+    const isActive =
+      typeof b.isActive === "boolean" ? b.isActive : true;
+
     const created = await prisma.showcase.create({
       data: {
         title,
@@ -63,6 +66,7 @@ export async function POST(request: Request) {
         beforePublicId: beforePublicId || null,
         afterPublicId: afterPublicId || null,
         sortOrder,
+        isActive,
       },
     });
     return NextResponse.json(created);

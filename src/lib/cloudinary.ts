@@ -21,3 +21,26 @@ export function configureCloudinary() {
 }
 
 export { cloudinary };
+
+/**
+ * Elimina un asset de Cloudinary. Errores se ignoran para no bloquear la BD.
+ */
+export async function destroyCloudinaryAsset(
+  publicId: string | null | undefined,
+): Promise<void> {
+  const id = publicId?.trim();
+  if (!id) return;
+  try {
+    configureCloudinary();
+  } catch {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    cloudinary.uploader.destroy(
+      id,
+      { resource_type: "image", invalidate: true },
+      () => resolve(),
+    );
+  });
+}
+

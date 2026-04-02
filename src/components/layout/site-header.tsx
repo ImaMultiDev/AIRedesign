@@ -20,7 +20,9 @@ export function SiteHeader() {
           <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/15">
             <Sparkles className="size-4 text-primary" aria-hidden />
           </span>
-          <span className="font-heading text-lg tracking-tight">AINterior</span>
+          <span className="font-heading text-lg tracking-tight">
+            AIRedesign
+          </span>
         </Link>
         <nav className="flex items-center gap-6 text-sm text-muted-foreground">
           <a
@@ -29,12 +31,6 @@ export function SiteHeader() {
           >
             Galería
           </a>
-          <Link
-            href="/admin/login"
-            className="rounded-full bg-primary px-4 py-2 text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Admin
-          </Link>
         </nav>
       </div>
     </motion.header>

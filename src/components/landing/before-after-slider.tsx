@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
   afterUrl: string;
   beforeAlt?: string;
   afterAlt?: string;
+  beforeBadgeLabel?: string;
+  afterBadgeLabel?: string;
   className?: string;
 };
 
@@ -18,36 +20,64 @@ export function BeforeAfterSlider({
   beforeUrl,
   afterUrl,
   beforeAlt = "Antes",
-  afterAlt = "Después",
+  afterAlt = "Propuesta de IA",
+  beforeBadgeLabel = "Antes",
+  afterBadgeLabel = "Propuesta de IA",
   className,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [pct, setPct] = useState(50);
   const dragging = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const pendingX = useRef<number | null>(null);
+  const [pct, setPct] = useState(50);
 
-  const setFromClientX = useCallback((clientX: number) => {
+  const splitStyle = { left: `${pct}%` } as const;
+
+  const applyClientX = useCallback((clientX: number) => {
     const el = wrapRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const x = Math.min(Math.max(clientX - rect.left, 0), rect.width);
-    setPct(rect.width === 0 ? 50 : (x / rect.width) * 100);
+    const next = rect.width === 0 ? 50 : (x / rect.width) * 100;
+    setPct(next);
+  }, []);
+
+  const scheduleClientX = useCallback(
+    (clientX: number) => {
+      pendingX.current = clientX;
+      if (rafRef.current != null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (pendingX.current != null) {
+          applyClientX(pendingX.current);
+        }
+      });
+    },
+    [applyClientX],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   return (
     <div
       ref={wrapRef}
+      style={{ touchAction: "none" }}
       className={cn(
-        "relative aspect-[4/3] w-full max-h-[min(85vh,56rem)] touch-none select-none overflow-hidden rounded-2xl bg-muted shadow-2xl ring-1 ring-black/5",
+        "relative aspect-[4/3] w-full max-h-[min(85vh,56rem)] select-none overflow-hidden rounded-2xl bg-muted shadow-2xl ring-1 ring-black/5",
         className,
       )}
       onPointerDown={(e) => {
         dragging.current = true;
         wrapRef.current?.setPointerCapture(e.pointerId);
-        setFromClientX(e.clientX);
+        scheduleClientX(e.clientX);
       }}
       onPointerMove={(e) => {
         if (!dragging.current) return;
-        setFromClientX(e.clientX);
+        scheduleClientX(e.clientX);
       }}
       onPointerUp={(e) => {
         dragging.current = false;
@@ -58,6 +88,9 @@ export function BeforeAfterSlider({
         }
       }}
       onPointerCancel={() => {
+        dragging.current = false;
+      }}
+      onLostPointerCapture={() => {
         dragging.current = false;
       }}
     >
@@ -85,26 +118,60 @@ export function BeforeAfterSlider({
         />
       </div>
 
-      <motion.div
-        className="pointer-events-none absolute bottom-0 top-0 w-px bg-white/95 shadow-[0_0_24px_rgba(0,0,0,0.35)]"
-        style={{ left: `${pct}%`, x: "-50%" }}
-        layout={false}
+      {/* Divisor: mismo `left` y -translate-x-1/2 que el mango para compartir eje exacto */}
+      <div
+        className="pointer-events-none absolute inset-y-0 z-10 w-px -translate-x-1/2 bg-white shadow-[0_0_20px_rgba(0,0,0,0.25)]"
+        style={splitStyle}
+        aria-hidden
+      />
+
+      {/* Mango: envoltorio solo posiciona; el scale al pulsar va en un hijo para no pisar translate */}
+      <div
+        className="pointer-events-auto absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none"
+        style={splitStyle}
       >
         <motion.div
-          className="pointer-events-auto absolute left-1/2 top-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize items-center justify-center rounded-full border border-white/40 bg-white/95 text-foreground shadow-xl backdrop-blur-sm"
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: "spring", stiffness: 420, damping: 28 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 520, damping: 32 }}
+          className="relative flex items-center justify-center"
         >
-          <GripVertical className="size-6 opacity-70" aria-hidden />
-          <span className="sr-only">Arrastra para comparar antes y después</span>
+          <motion.span
+            className="absolute inline-flex size-[3.25rem] rounded-full bg-white/25"
+            animate={{
+              scale: [1, 1.12, 1],
+              opacity: [0.55, 0.2, 0.55],
+            }}
+            transition={{
+              duration: 2.4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            aria-hidden
+          />
+          <span className="relative flex size-14 items-center justify-center rounded-full border border-white/50 bg-white/95 text-foreground shadow-[0_8px_32px_rgba(0,0,0,0.2)] ring-2 ring-white/80 backdrop-blur-sm">
+            <ChevronLeft
+              className="absolute left-1 size-4 text-foreground/50"
+              strokeWidth={2.5}
+              aria-hidden
+            />
+            <ChevronRight
+              className="absolute right-1 size-4 text-foreground/50"
+              strokeWidth={2.5}
+              aria-hidden
+            />
+            <span className="h-6 w-px rounded-full bg-foreground/20" aria-hidden />
+          </span>
+          <span className="sr-only">
+            Arrastra para comparar antes y después
+          </span>
         </motion.div>
-      </motion.div>
+      </div>
 
-      <span className="pointer-events-none absolute left-4 top-4 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-        Antes
+      <span className="pointer-events-none absolute left-4 top-4 z-[1] max-w-[45%] rounded-full bg-black/45 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-white backdrop-blur-md sm:text-xs sm:normal-case sm:tracking-normal">
+        {beforeBadgeLabel}
       </span>
-      <span className="pointer-events-none absolute right-4 top-4 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-        Después
+      <span className="pointer-events-none absolute right-4 top-4 z-[1] max-w-[52%] rounded-full bg-black/45 px-3 py-1 text-right text-[10px] font-medium leading-tight text-white backdrop-blur-md sm:text-xs">
+        {afterBadgeLabel}
       </span>
     </div>
   );

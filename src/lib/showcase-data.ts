@@ -20,13 +20,20 @@ function rowToItem(r: {
   };
 }
 
-/** Home: base de datos si hay datos; si no, mock para validar diseño. */
+/**
+ * Home: si hay filas en BD, solo `isActive: true`. Si la BD está vacía o falla,
+ * se usan mocks (siempre “publicados” para la demo).
+ */
 export async function getShowcasesForHome(): Promise<ShowcaseItem[]> {
   try {
-    const rows = await prisma.showcase.findMany({
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-    });
-    if (rows.length > 0) return rows.map(rowToItem);
+    const total = await prisma.showcase.count();
+    if (total > 0) {
+      const rows = await prisma.showcase.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      });
+      return rows.map(rowToItem);
+    }
   } catch {
     /* DATABASE_URL ausente o migración pendiente */
   }

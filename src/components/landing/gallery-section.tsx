@@ -1,34 +1,69 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+} from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { BlurUpImage } from "@/components/landing/blur-up-image";
+import { Button } from "@/components/ui/button";
+import { ShowcaseCardSplitPreview } from "@/components/landing/showcase-card-split-preview";
 import { ShowcaseModal } from "@/components/landing/showcase-modal";
-import { BLUR_DATA_URL } from "@/data/mock-showcase";
 import type { ShowcaseItem } from "@/types/showcase";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 6;
 
 type Props = {
   items: ShowcaseItem[];
 };
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 28 },
-  visible: (i: number) => ({
+const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? "6%" : "-6%",
+    opacity: 0,
+  }),
+  center: {
+    x: "0%",
     opacity: 1,
-    y: 0,
-    transition: {
-      delay: 0.06 * i,
-      duration: 0.55,
-      ease: [0.22, 1, 0.36, 1] as const,
-    },
+  },
+  exit: (dir: number) => ({
+    x: dir > 0 ? "-6%" : "6%",
+    opacity: 0,
   }),
 };
 
 export function GallerySection({ items }: Props) {
+  const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<ShowcaseItem | null>(null);
+  const [page, setPage] = useState(0);
+  const [[direction], setDirection] = useState<[number]>([0]);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const showPager = items.length > PAGE_SIZE;
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages - 1));
+  }, [items.length, totalPages]);
+
+  const pageItems = useMemo(
+    () => items.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [items, page],
+  );
+
+  function goTo(nextPage: number) {
+    const clamped = Math.max(0, Math.min(totalPages - 1, nextPage));
+    if (clamped === page) return;
+    setDirection([clamped > page ? 1 : -1]);
+    setPage(clamped);
+  }
+
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
     <>
@@ -52,58 +87,150 @@ export function GallerySection({ items }: Props) {
             </h2>
             <p className="text-lg text-muted-foreground">
               Cada tarjeta es un proyecto real de estilo. Abre el comparador
-              a pantalla completa y arrastra para revelar el resultado.
+              a pantalla completa y arrastra para revelar la propuesta de IA.
             </p>
           </motion.div>
 
-          <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item, i) => (
-              <motion.li
-                key={item.id}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-40px" }}
-                variants={cardVariants}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActive(item);
-                    setOpen(true);
-                  }}
-                  className="group block w-full text-left"
-                >
-                  <Card className="overflow-hidden border-foreground/10 bg-card shadow-sm ring-0 transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.07]">
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <BlurUpImage
-                        src={item.afterUrl}
-                        alt={`${item.title} — vista previa`}
-                        sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
-                        blurDataURL={BLUR_DATA_URL}
-                        className="transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-95" />
-                      <span className="absolute bottom-4 left-4 rounded-full bg-white/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
-                        {item.category}
-                      </span>
-                      <span className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 scale-90">
-                        <ArrowUpRight className="size-5" aria-hidden />
-                      </span>
-                    </div>
-                    <div className="space-y-1 px-5 py-5">
-                      <h3 className="font-heading text-xl tracking-tight text-card-foreground transition-colors group-hover:text-primary">
-                        {item.title}
-                      </h3>
-                      <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {item.description ?? "Toca para comparar antes y después."}
-                      </p>
-                    </div>
-                  </Card>
-                </button>
-              </motion.li>
-            ))}
-          </ul>
+          {items.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-foreground/15 bg-muted/30 py-16 text-center text-sm text-muted-foreground">
+              Aún no hay ejemplos activos en la galería.
+            </p>
+          ) : (
+            <div
+              className={cn(
+                "relative",
+                showPager && "px-2 sm:px-10 md:px-12",
+              )}
+            >
+              {showPager ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute left-0 top-1/2 z-20 hidden size-11 -translate-y-1/2 rounded-full border-foreground/15 bg-background/90 shadow-md backdrop-blur-sm sm:flex"
+                    aria-label="Página anterior"
+                    onClick={() => goTo(page - 1)}
+                    disabled={page <= 0}
+                  >
+                    <ChevronLeft className="size-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-0 top-1/2 z-20 hidden size-11 -translate-y-1/2 rounded-full border-foreground/15 bg-background/90 shadow-md backdrop-blur-sm sm:flex"
+                    aria-label="Página siguiente"
+                    onClick={() => goTo(page + 1)}
+                    disabled={page >= totalPages - 1}
+                  >
+                    <ChevronRight className="size-5" />
+                  </Button>
+                </>
+              ) : null}
+
+              <div className="min-h-[320px] overflow-hidden sm:min-h-[400px] md:min-h-[480px]">
+                <AnimatePresence mode="wait" custom={direction} initial={false}>
+                  <motion.ul
+                    key={page}
+                    role="list"
+                    custom={direction}
+                    variants={slideVariants}
+                    initial={reduceMotion ? "center" : "enter"}
+                    animate="center"
+                    exit={reduceMotion ? "center" : "exit"}
+                    transition={transition}
+                    className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                  >
+                    {pageItems.map((item, i) => (
+                      <motion.li
+                        key={item.id}
+                        initial={{ opacity: 0, y: 18 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay: reduceMotion ? 0 : 0.04 * i,
+                          duration: reduceMotion ? 0 : 0.45,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActive(item);
+                            setOpen(true);
+                          }}
+                          className="group block w-full text-left"
+                        >
+                          <Card className="overflow-hidden border-foreground/10 bg-card shadow-sm ring-0 transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.07]">
+                            <div className="relative aspect-[4/3] overflow-hidden">
+                              <ShowcaseCardSplitPreview
+                                beforeUrl={item.beforeUrl}
+                                afterUrl={item.afterUrl}
+                                title={item.title}
+                                sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+                              />
+                              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-95" />
+                              <span className="absolute bottom-4 left-4 rounded-full bg-white/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
+                                {item.category}
+                              </span>
+                              <span className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100 scale-90">
+                                <ArrowUpRight className="size-5" aria-hidden />
+                              </span>
+                            </div>
+                            <div className="space-y-1 px-5 py-5">
+                              <h3 className="font-heading text-xl tracking-tight text-card-foreground transition-colors group-hover:text-primary">
+                                {item.title}
+                              </h3>
+                              <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                                {item.description ??
+                                  "Toca para comparar antes y la propuesta de IA."}
+                              </p>
+                            </div>
+                          </Card>
+                        </button>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </AnimatePresence>
+              </div>
+
+              {showPager ? (
+                <div className="mt-8 flex flex-col items-center gap-3 sm:hidden">
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full"
+                      disabled={page <= 0}
+                      onClick={() => goTo(page - 1)}
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => goTo(page + 1)}
+                    >
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs tabular-nums text-muted-foreground">
+                    {page + 1} / {totalPages}
+                  </p>
+                </div>
+              ) : null}
+
+              {showPager ? (
+                <p className="mt-6 hidden text-center text-xs tabular-nums text-muted-foreground sm:block">
+                  {page + 1} / {totalPages}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       </section>
 

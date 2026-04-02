@@ -39,7 +39,7 @@ export function Hero() {
       />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.92_0.04_75/0.35),transparent)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-center px-6 pb-24 pt-28 lg:px-8">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-center px-6 pb-16 pt-18 lg:pb-24 lg:pt-28 lg:px-8">
         <motion.div
           variants={stagger}
           initial="hidden"
@@ -70,9 +70,9 @@ export function Hero() {
             variants={fadeUp}
             className="max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
           >
-            Transformamos referencias en ambientes coherentes, luminosos y listos
-            para vivir. Una experiencia visual pensada para impresionar desde el
-            primer scroll.
+            Transformamos cualquier espacio en una propuesta que no imaginarías.
+            Una experiencia nueva y sorprendente pensada para llevar cualquier
+            lugar deseado a otro nivel.
           </motion.p>
           <motion.div variants={fadeUp} className="flex flex-wrap gap-4 pt-2">
             <a
@@ -91,7 +91,6 @@ export function Hero() {
           transition={{ delay: 1.1, duration: 0.8 }}
           className="absolute bottom-10 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-muted-foreground"
         >
-          <span className="text-[10px] uppercase tracking-widest">Scroll</span>
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}

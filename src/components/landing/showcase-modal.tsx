@@ -59,7 +59,8 @@ export function ShowcaseModal({ open, onOpenChange, item }: Props) {
               beforeUrl={item.beforeUrl}
               afterUrl={item.afterUrl}
               beforeAlt={`Antes — ${item.title}`}
-              afterAlt={`Después — ${item.title}`}
+              afterAlt={`Propuesta de IA — ${item.title}`}
+              afterBadgeLabel="Propuesta de IA"
             />
           </div>
           <p className="text-center text-xs text-muted-foreground">

@@ -1,0 +1,11 @@
+export type AdminShowcaseRow = {
+  id: string;
+  title: string;
+  category: string;
+  description: string | null;
+  beforeUrl: string;
+  afterUrl: string;
+  beforePublicId: string | null;
+  afterPublicId: string | null;
+  isActive: boolean;
+};

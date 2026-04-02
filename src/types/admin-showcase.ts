@@ -7,5 +7,9 @@ export type AdminShowcaseRow = {
   afterUrl: string;
   beforePublicId: string | null;
   afterPublicId: string | null;
+  plusBudgetDetails: string | null;
+  technicalPdfUrl: string | null;
+  /** @internal admin */
+  technicalPdfPublicId: string | null;
   isActive: boolean;
 };

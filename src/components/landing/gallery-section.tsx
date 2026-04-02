@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShowcaseCardSplitPreview } from "@/components/landing/showcase-card-split-preview";
 import { ShowcaseModal } from "@/components/landing/showcase-modal";
+import { GalleryPremiumActions } from "@/components/landing/gallery-premium-actions";
 import type { ShowcaseItem } from "@/types/showcase";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,8 @@ export function GallerySection({ items }: Props) {
             <p className="text-lg text-muted-foreground">
               Cada tarjeta es un proyecto real de estilo. Abre el comparador
               a pantalla completa y arrastra para revelar la propuesta de IA.
+              Donde haya ficha técnica o presupuesto, el acceso completo está
+              reservado al plan Plus.
             </p>
           </motion.div>
 
@@ -153,15 +156,15 @@ export function GallerySection({ items }: Props) {
                           ease: [0.22, 1, 0.36, 1],
                         }}
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActive(item);
-                            setOpen(true);
-                          }}
-                          className="group block w-full text-left"
-                        >
-                          <Card className="overflow-hidden border-foreground/10 bg-card shadow-sm ring-0 transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.07]">
+                        <Card className="group overflow-hidden border-foreground/10 bg-card shadow-sm ring-0 transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/[0.07]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActive(item);
+                              setOpen(true);
+                            }}
+                            className="block w-full text-left"
+                          >
                             <div className="relative aspect-[4/3] overflow-hidden">
                               <ShowcaseCardSplitPreview
                                 beforeUrl={item.beforeUrl}
@@ -186,8 +189,9 @@ export function GallerySection({ items }: Props) {
                                   "Toca para comparar antes y la propuesta de IA."}
                               </p>
                             </div>
-                          </Card>
-                        </button>
+                          </button>
+                          <GalleryPremiumActions item={item} variant="card" />
+                        </Card>
                       </motion.li>
                     ))}
                   </motion.ul>

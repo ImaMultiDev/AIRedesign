@@ -30,6 +30,8 @@ export function AdminDashboard({ initialItems }: Props) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [galleryPlusBudget, setGalleryPlusBudget] = useState("");
+  const [galleryPdfFile, setGalleryPdfFile] = useState<File | null>(null);
   const [beforeFile, setBeforeFile] = useState<File | null>(null);
   const [afterFile, setAfterFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -104,6 +106,29 @@ export function AdminDashboard({ initialItems }: Props) {
       );
       setProgressAfter(100);
 
+      let technicalPdfUrl: string | null = null;
+      let technicalPdfPublicId: string | null = null;
+      if (galleryPdfFile) {
+        const fd = new FormData();
+        fd.set("file", galleryPdfFile);
+        const upPdf = await fetch("/api/upload/pdf", {
+          method: "POST",
+          body: fd,
+        });
+        const pdfData = await upPdf.json().catch(() => ({}));
+        if (!upPdf.ok) {
+          throw new Error(
+            typeof pdfData.error === "string"
+              ? pdfData.error
+              : "Error subiendo la ficha PDF",
+          );
+        }
+        technicalPdfUrl =
+          typeof pdfData.url === "string" ? pdfData.url : null;
+        technicalPdfPublicId =
+          typeof pdfData.publicId === "string" ? pdfData.publicId : null;
+      }
+
       const res = await fetch("/api/showcase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,6 +140,9 @@ export function AdminDashboard({ initialItems }: Props) {
           afterUrl: after.url,
           beforePublicId: before.publicId,
           afterPublicId: after.publicId,
+          plusBudgetDetails: galleryPlusBudget.trim() || null,
+          technicalPdfUrl,
+          technicalPdfPublicId,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -133,12 +161,17 @@ export function AdminDashboard({ initialItems }: Props) {
         afterUrl: data.afterUrl,
         beforePublicId: data.beforePublicId ?? null,
         afterPublicId: data.afterPublicId ?? null,
+        plusBudgetDetails: data.plusBudgetDetails ?? null,
+        technicalPdfUrl: data.technicalPdfUrl ?? null,
+        technicalPdfPublicId: data.technicalPdfPublicId ?? null,
         isActive: data.isActive ?? true,
       };
       setItems((prev) => [row, ...prev]);
       setTitle("");
       setCategory("");
       setDescription("");
+      setGalleryPlusBudget("");
+      setGalleryPdfFile(null);
       setBeforeFile(null);
       setAfterFile(null);
       toast.success("Ejemplo creado y subido a Cloudinary");
@@ -193,6 +226,15 @@ export function AdminDashboard({ initialItems }: Props) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 md:justify-end">
+            <Link
+              href="/admin/solicitudes"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-11 rounded-xl border-foreground/15 bg-background px-5",
+              )}
+            >
+              Solicitudes
+            </Link>
             <Link
               href="/"
               className={cn(
@@ -252,6 +294,34 @@ export function AdminDashboard({ initialItems }: Props) {
                   rows={3}
                   className="rounded-xl bg-background"
                   disabled={saving}
+                />
+              </div>
+              <div className="space-y-2 rounded-xl border border-primary/15 bg-primary/[0.04] p-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  Gancho Plan Plus (galería pública)
+                </p>
+                <Label htmlFor="create-plus-budget">
+                  Presupuesto detallado (texto)
+                </Label>
+                <Textarea
+                  id="create-plus-budget"
+                  value={galleryPlusBudget}
+                  onChange={(e) => setGalleryPlusBudget(e.target.value)}
+                  rows={5}
+                  placeholder="Materiales, partidas, rango de inversión… Visible solo para suscriptores Plus."
+                  className="rounded-xl bg-background"
+                  disabled={saving}
+                />
+                <Label htmlFor="create-gallery-pdf">Ficha técnica PDF</Label>
+                <Input
+                  id="create-gallery-pdf"
+                  type="file"
+                  accept="application/pdf"
+                  disabled={saving}
+                  className="h-auto min-h-[3rem] cursor-pointer rounded-xl border-dashed border-foreground/15 bg-background py-2"
+                  onChange={(e) =>
+                    setGalleryPdfFile(e.target.files?.[0] ?? null)
+                  }
                 />
               </div>
               <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -366,6 +436,11 @@ export function AdminDashboard({ initialItems }: Props) {
                     {row.description ? (
                       <p className="line-clamp-2 text-sm text-muted-foreground">
                         {row.description}
+                      </p>
+                    ) : null}
+                    {(row.technicalPdfUrl || row.plusBudgetDetails) ? (
+                      <p className="text-[11px] font-medium text-primary">
+                        Incluye contenido Plus en galería (PDF / presupuesto)
                       </p>
                     ) : null}
                   </div>

@@ -27,6 +27,7 @@ export { cloudinary };
  */
 export async function destroyCloudinaryAsset(
   publicId: string | null | undefined,
+  resourceType: "image" | "raw" = "image",
 ): Promise<void> {
   const id = publicId?.trim();
   if (!id) return;
@@ -38,7 +39,7 @@ export async function destroyCloudinaryAsset(
   await new Promise<void>((resolve) => {
     cloudinary.uploader.destroy(
       id,
-      { resource_type: "image", invalidate: true },
+      { resource_type: resourceType, invalidate: true },
       () => resolve(),
     );
   });

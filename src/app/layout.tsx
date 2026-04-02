@@ -24,8 +24,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AINterior — Rediseño de espacios con IA",
-    template: "%s · AINterior",
+    default: "AIRedesign — Rediseño de espacios con IA",
+    template: "%s · AIRedesign",
   },
   description:
     "Experiencias visuales premium: transformación de interiores con inteligencia artificial.",

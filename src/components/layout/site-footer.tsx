@@ -4,7 +4,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-foreground/10 px-6 py-12 text-center">
       <p className="text-sm text-muted-foreground">
-        © {new Date().getFullYear()} AINterior. Rediseño asistido por IA.
+        © {new Date().getFullYear()} AIRedesign. Rediseño asistido por IA.
       </p>
       <p className="mt-4">
         <Link

@@ -5,6 +5,12 @@ export const BLUR_DATA_URL =
   "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
 
 /** Datos demo hasta conectar la base de datos */
+const premiumDefaults = {
+  hasPremiumPdf: false,
+  hasPremiumBudget: false,
+  plusBudgetDetails: null as string | null,
+};
+
 export const MOCK_SHOWCASES: ShowcaseItem[] = [
   {
     id: "mock-1",
@@ -16,6 +22,7 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
   {
     id: "mock-2",
@@ -27,6 +34,7 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1556912173-46c336c7fd55?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
   {
     id: "mock-3",
@@ -38,6 +46,7 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
   {
     id: "mock-4",
@@ -49,6 +58,7 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1581147036323-20cf2ee20ec9?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
   {
     id: "mock-5",
@@ -60,6 +70,7 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1616594039964-ae9021e550fd?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
   {
     id: "mock-6",
@@ -71,5 +82,6 @@ export const MOCK_SHOWCASES: ShowcaseItem[] = [
       "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1400&q=80",
     afterUrl:
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80",
+    ...premiumDefaults,
   },
 ];

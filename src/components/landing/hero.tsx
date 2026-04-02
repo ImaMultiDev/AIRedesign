@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { BlurUpImage } from "@/components/landing/blur-up-image";
 import { BLUR_DATA_URL } from "@/data/mock-showcase";
@@ -82,6 +83,12 @@ export function Hero() {
               Ver transformaciones
               <ArrowDown className="size-4" aria-hidden />
             </a>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-background/80 px-8 py-3.5 text-sm font-medium text-foreground shadow-sm backdrop-blur-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Membresía Plus
+            </Link>
           </motion.div>
         </motion.div>
 

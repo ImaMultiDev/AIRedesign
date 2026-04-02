@@ -9,18 +9,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Usuario administrador (NextAuth Credentials)
+enum UserRole {
+  USER
+  ADMIN
+}
+
+/// Estado de suscripción Stripe (Plus)
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+enum ProposalStatus {
+  SUBMITTED
+  IN_REVIEW
+  BASIC_READY
+  PLUS_IN_PROGRESS
+  PLUS_DELIVERED
+  ARCHIVED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   emailVerified DateTime?
-  password      String
+  /// Solo administradores (login con contraseña). Clientes usan magic link / OAuth.
+  password      String?
   image         String?
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          UserRole  @default(USER)
+
+  stripeCustomerId            String?              @unique
+  stripeSubscriptionId        String?              @unique
+  subscriptionStatus          SubscriptionStatus   @default(NONE)
+  subscriptionCurrentPeriodEnd  DateTime?
+
+  accounts         Account[]
+  sessions         Session[]
+  proposalRequests ProposalRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -58,6 +93,32 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+/// Solicitud de propuesta (básica gratuita o completa Plus)
+model ProposalRequest {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  description String         @db.Text
+  /// BASIC (gratis) o PLUS (requiere suscripción activa al crear entrega completa)
+  tierRequested String       @default("BASIC") // "BASIC" | "PLUS"
+  status      ProposalStatus @default(SUBMITTED)
+
+  /// Respuesta resumida para el plan gratuito (texto / notas internas)
+  basicSummary String? @db.Text
+  /// Presupuesto detallado materiales (Plus), markdown o texto
+  plusBudgetDetails String? @db.Text
+  /// Ficha técnica PDF (Cloudinary raw)
+  technicalPdfUrl     String?
+  technicalPdfPublicId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
 /// Ejemplos de galería (antes/después) — URLs Cloudinary optimizadas
 model Showcase {
   id             String   @id @default(cuid())
@@ -68,8 +129,12 @@ model Showcase {
   afterUrl       String
   beforePublicId String?
   afterPublicId  String?
+  /// Contenido premium (Plan Plus): presupuesto detallado
+  plusBudgetDetails    String? @db.Text
+  /// Ficha técnica PDF (Cloudinary raw); descarga Plus vía API
+  technicalPdfUrl      String?
+  technicalPdfPublicId String?
   sortOrder      Int      @default(0)
-  /// Si es false, no se muestra en la web pública.
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

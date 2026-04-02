@@ -5,7 +5,7 @@ import { configureCloudinary, cloudinary } from "@/lib/cloudinary";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const folder = process.env.CLOUDINARY_UPLOAD_FOLDER ?? "ainterior/showcase";
+  const folder = process.env.CLOUDINARY_UPLOAD_FOLDER ?? "airedesign/showcase";
 
   try {
     const result = await new Promise<{
@@ -51,6 +51,9 @@ export async function POST(request: Request) {
       publicId: result.public_id,
     });
   } catch {
-    return NextResponse.json({ error: "Error subiendo a Cloudinary" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error subiendo a Cloudinary" },
+      { status: 500 },
+    );
   }
 }

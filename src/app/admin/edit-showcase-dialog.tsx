@@ -44,6 +44,9 @@ export function EditShowcaseDialog({
     null,
   );
   const [afterPreviewUrl, setAfterPreviewUrl] = useState<string | null>(null);
+  const [galleryPlusBudget, setGalleryPlusBudget] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [clearPdf, setClearPdf] = useState(false);
 
   useEffect(() => {
     if (!beforeFile) {
@@ -74,6 +77,9 @@ export function EditShowcaseDialog({
       setAfterFile(null);
       setProgressBefore(null);
       setProgressAfter(null);
+      setGalleryPlusBudget(item.plusBudgetDetails ?? "");
+      setPdfFile(null);
+      setClearPdf(false);
     }
   }, [item, open]);
 
@@ -119,7 +125,30 @@ export function EditShowcaseDialog({
         title: title.trim(),
         category: category.trim(),
         description: description.trim() || null,
+        plusBudgetDetails: galleryPlusBudget.trim() || null,
       };
+
+      if (clearPdf) {
+        patchBody.technicalPdfUrl = null;
+        patchBody.technicalPdfPublicId = null;
+      } else if (pdfFile) {
+        const fd = new FormData();
+        fd.set("file", pdfFile);
+        const upPdf = await fetch("/api/upload/pdf", {
+          method: "POST",
+          body: fd,
+        });
+        const pdfData = await upPdf.json().catch(() => ({}));
+        if (!upPdf.ok) {
+          throw new Error(
+            typeof pdfData.error === "string"
+              ? pdfData.error
+              : "Error subiendo el PDF",
+          );
+        }
+        patchBody.technicalPdfUrl = pdfData.url;
+        patchBody.technicalPdfPublicId = pdfData.publicId;
+      }
 
       if (beforeFile) {
         patchBody.beforeUrl = beforeUrl;
@@ -152,6 +181,9 @@ export function EditShowcaseDialog({
         afterUrl: data.afterUrl,
         beforePublicId: data.beforePublicId ?? null,
         afterPublicId: data.afterPublicId ?? null,
+        plusBudgetDetails: data.plusBudgetDetails ?? null,
+        technicalPdfUrl: data.technicalPdfUrl ?? null,
+        technicalPdfPublicId: data.technicalPdfPublicId ?? null,
         isActive: data.isActive ?? item.isActive,
       });
 
@@ -218,6 +250,65 @@ export function EditShowcaseDialog({
               className="rounded-xl bg-muted/40"
               disabled={saving}
             />
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-primary/15 bg-primary/[0.04] p-4">
+            <Label className="text-xs uppercase tracking-wider text-primary">
+              Galería · contenido Plus
+            </Label>
+            <div className="space-y-2">
+              <Label htmlFor={`${formId}-plus-budget`}>
+                Presupuesto detallado
+              </Label>
+              <Textarea
+                id={`${formId}-plus-budget`}
+                value={galleryPlusBudget}
+                onChange={(e) => setGalleryPlusBudget(e.target.value)}
+                rows={4}
+                className="rounded-xl bg-background"
+                disabled={saving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${formId}-pdf`}>Ficha técnica PDF</Label>
+              {item.technicalPdfUrl && !clearPdf ? (
+                <p className="text-xs text-muted-foreground">
+                  <a
+                    href={item.technicalPdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    Ver PDF actual
+                  </a>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="text-destructive underline-offset-4 hover:underline"
+                    disabled={saving}
+                    onClick={() => {
+                      setClearPdf(true);
+                      setPdfFile(null);
+                    }}
+                  >
+                    Quitar
+                  </button>
+                </p>
+              ) : null}
+              {(clearPdf || !item.technicalPdfUrl) && (
+                <Input
+                  id={`${formId}-pdf`}
+                  type="file"
+                  accept="application/pdf"
+                  disabled={saving}
+                  className="h-auto min-h-[2.75rem] cursor-pointer rounded-lg border border-dashed border-foreground/10 bg-background py-2 text-sm"
+                  onChange={(e) => {
+                    setPdfFile(e.target.files?.[0] ?? null);
+                    if (e.target.files?.[0]) setClearPdf(false);
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

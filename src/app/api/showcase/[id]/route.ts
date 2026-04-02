@@ -8,7 +8,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function DELETE(_request: Request, context: RouteContext) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -25,6 +25,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   await Promise.all([
     destroyCloudinaryAsset(row.beforePublicId),
     destroyCloudinaryAsset(row.afterPublicId),
+    destroyCloudinaryAsset(row.technicalPdfPublicId, "raw"),
   ]);
 
   await prisma.showcase.delete({ where: { id } });
@@ -33,7 +34,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -62,6 +63,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     afterUrl?: string;
     beforePublicId?: string | null;
     afterPublicId?: string | null;
+    plusBudgetDetails?: string | null;
+    technicalPdfUrl?: string | null;
+    technicalPdfPublicId?: string | null;
     isActive?: boolean;
   } = {};
 
@@ -104,6 +108,36 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (typeof body.isActive === "boolean") {
     data.isActive = body.isActive;
+  }
+
+  if ("plusBudgetDetails" in body) {
+    data.plusBudgetDetails =
+      typeof body.plusBudgetDetails === "string"
+        ? body.plusBudgetDetails.trim() || null
+        : null;
+  }
+
+  if ("technicalPdfUrl" in body && "technicalPdfPublicId" in body) {
+    const nextUrl =
+      body.technicalPdfUrl == null
+        ? null
+        : typeof body.technicalPdfUrl === "string"
+          ? body.technicalPdfUrl.trim() || null
+          : null;
+    const nextPid =
+      body.technicalPdfPublicId == null
+        ? null
+        : typeof body.technicalPdfPublicId === "string"
+          ? body.technicalPdfPublicId.trim() || null
+          : null;
+    if (
+      existing.technicalPdfPublicId &&
+      existing.technicalPdfPublicId !== nextPid
+    ) {
+      await destroyCloudinaryAsset(existing.technicalPdfPublicId, "raw");
+    }
+    data.technicalPdfUrl = nextUrl;
+    data.technicalPdfPublicId = nextPid;
   }
 
   if (Object.keys(data).length === 0) {

@@ -7,7 +7,7 @@ import type { AdminShowcaseRow } from "@/types/admin-showcase";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
     redirect("/admin/login");
   }
 
@@ -25,6 +25,9 @@ export default async function AdminPage() {
       afterUrl: r.afterUrl,
       beforePublicId: r.beforePublicId,
       afterPublicId: r.afterPublicId,
+      plusBudgetDetails: r.plusBudgetDetails ?? null,
+      technicalPdfUrl: r.technicalPdfUrl ?? null,
+      technicalPdfPublicId: r.technicalPdfPublicId ?? null,
       isActive: r.isActive,
     }));
   } catch {

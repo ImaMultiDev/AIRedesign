@@ -4,10 +4,13 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getShowcasesForHome } from "@/lib/showcase-data";
 
-/** Público: mismos datos que la home (DB o mock). */
+/** Público: mismos datos que la home (DB o mock), según sesión Plus. */
 export async function GET() {
   try {
-    const items = await getShowcasesForHome();
+    const session = await getServerSession(authOptions);
+    const viewerIsPlus =
+      session?.user?.role === "USER" && Boolean(session.user.isPlus);
+    const items = await getShowcasesForHome(viewerIsPlus);
     return NextResponse.json(items);
   } catch {
     return NextResponse.json({ error: "No se pudo leer" }, { status: 500 });
@@ -16,7 +19,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -38,6 +41,18 @@ export async function POST(request: Request) {
     typeof b.beforePublicId === "string" ? b.beforePublicId.trim() : null;
   const afterPublicId =
     typeof b.afterPublicId === "string" ? b.afterPublicId.trim() : null;
+  const plusBudgetDetails =
+    typeof b.plusBudgetDetails === "string"
+      ? b.plusBudgetDetails.trim() || null
+      : null;
+  const technicalPdfUrl =
+    typeof b.technicalPdfUrl === "string"
+      ? b.technicalPdfUrl.trim() || null
+      : null;
+  const technicalPdfPublicId =
+    typeof b.technicalPdfPublicId === "string"
+      ? b.technicalPdfPublicId.trim() || null
+      : null;
 
   if (!title || !category || !beforeUrl || !afterUrl) {
     return NextResponse.json(
@@ -65,6 +80,9 @@ export async function POST(request: Request) {
         afterUrl,
         beforePublicId: beforePublicId || null,
         afterPublicId: afterPublicId || null,
+        plusBudgetDetails,
+        technicalPdfUrl,
+        technicalPdfPublicId,
         sortOrder,
         isActive,
       },

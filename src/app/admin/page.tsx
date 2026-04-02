@@ -1,0 +1,31 @@
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { AdminDashboard, type AdminShowcaseRow } from "./admin-dashboard";
+
+export default async function AdminPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect("/admin/login");
+  }
+
+  let initialItems: AdminShowcaseRow[] = [];
+  try {
+    const rows = await prisma.showcase.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    });
+    initialItems = rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      description: r.description,
+      beforeUrl: r.beforeUrl,
+      afterUrl: r.afterUrl,
+    }));
+  } catch {
+    /* sin DATABASE_URL o sin migraciones */
+  }
+
+  return <AdminDashboard initialItems={initialItems} />;
+}

@@ -139,7 +139,49 @@ model Showcase {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  productPins ShowcaseProductPin[]
+
   @@index([category])
   @@index([sortOrder])
   @@index([isActive])
+}
+
+/// Puntos «Shop the look» sobre la imagen «después» (coords 0-1 desde esquina superior izquierda)
+model ShowcaseProductPin {
+  id         String   @id @default(cuid())
+  showcaseId String
+  showcase   Showcase @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  positionX  Float
+  positionY  Float
+  /// Nombre del producto / mueble (común a todas las ofertas del punto)
+  name       String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  offers ShowcaseProductPinOffer[]
+
+  @@index([showcaseId])
+}
+
+/// Variante de compra (tienda + precio + enlace) por cada pin — comparador multi-tienda
+model ShowcaseProductPinOffer {
+  id          String             @id @default(cuid())
+  pinId       String
+  pin         ShowcaseProductPin @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  storeName   String
+  /// Marca para icono reconocible (amazon, ikea, other…)
+  storeBrand  String             @default("other")
+  /// Miniatura del artículo en la tienda (URL https)
+  thumbnailUrl String?           @db.Text
+  /// Texto mostrado («899 €», «desde 129 €/m»…)
+  priceLabel  String
+  /// Valor numérico para ordenar de menor a mayor (misma moneda por producto)
+  sortPrice   Float
+  buyUrl      String             @db.Text
+  sortOrder   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([pinId])
 }

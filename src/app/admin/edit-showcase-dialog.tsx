@@ -16,7 +16,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { uploadImageWithProgress } from "@/lib/upload-with-progress";
+import { productPinsFromApiResponse } from "@/lib/admin-showcase-pins";
 import type { AdminShowcaseRow } from "@/types/admin-showcase";
+import {
+  ShopTheLookEditor,
+  emptyOffer,
+  serializePinsForApi,
+  type ShopTheLookDraftPin,
+} from "@/app/admin/shop-the-look-editor";
 
 type Props = {
   open: boolean;
@@ -47,6 +54,7 @@ export function EditShowcaseDialog({
   const [galleryPlusBudget, setGalleryPlusBudget] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [clearPdf, setClearPdf] = useState(false);
+  const [pinsDraft, setPinsDraft] = useState<ShopTheLookDraftPin[]>([]);
 
   useEffect(() => {
     if (!beforeFile) {
@@ -80,6 +88,30 @@ export function EditShowcaseDialog({
       setGalleryPlusBudget(item.plusBudgetDetails ?? "");
       setPdfFile(null);
       setClearPdf(false);
+      setPinsDraft(
+        (item.productPins ?? []).map((p) => ({
+          clientId: p.id,
+          positionX: p.positionX,
+          positionY: p.positionY,
+          name: p.name,
+          offers:
+            (p.offers ?? []).length > 0
+              ? (p.offers ?? []).map((o) => ({
+                  clientId: o.id,
+                  storeName: o.storeName,
+                  storeBrand: o.storeBrand,
+                  thumbnailUrl: o.thumbnailUrl ?? "",
+                  priceLabel: o.priceLabel,
+                  sortPrice:
+                    Number.isFinite(o.sortPrice) &&
+                    o.sortPrice !== Number.POSITIVE_INFINITY
+                      ? String(o.sortPrice)
+                      : "",
+                  buyUrl: o.buyUrl,
+                }))
+              : [emptyOffer()],
+        })),
+      );
     }
   }, [item, open]);
 
@@ -88,6 +120,12 @@ export function EditShowcaseDialog({
     if (!item) return;
     if (!title.trim() || !category.trim()) {
       toast.error("Título y categoría son obligatorios.");
+      return;
+    }
+
+    const pinsPayload = serializePinsForApi(pinsDraft);
+    if (!pinsPayload.ok) {
+      toast.error(pinsPayload.message);
       return;
     }
 
@@ -159,6 +197,8 @@ export function EditShowcaseDialog({
         patchBody.afterPublicId = afterPublicId;
       }
 
+      patchBody.pins = pinsPayload.payload;
+
       const res = await fetch(`/api/showcase/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -185,6 +225,7 @@ export function EditShowcaseDialog({
         technicalPdfUrl: data.technicalPdfUrl ?? null,
         technicalPdfPublicId: data.technicalPdfPublicId ?? null,
         isActive: data.isActive ?? item.isActive,
+        productPins: productPinsFromApiResponse(data.productPins),
       });
 
       toast.success("Cambios guardados");
@@ -202,7 +243,7 @@ export function EditShowcaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(90dvh,860px)] max-w-lg gap-0 overflow-y-auto rounded-2xl border-foreground/10 p-0 shadow-2xl sm:max-w-xl">
+      <DialogContent className="max-h-[min(92dvh,920px)] max-w-lg gap-0 overflow-y-auto rounded-2xl border-foreground/10 p-0 shadow-2xl sm:max-w-4xl">
         <DialogHeader className="border-b border-foreground/10 px-6 py-5 text-left">
           <DialogTitle className="font-heading text-xl tracking-tight">
             Editar ejemplo
@@ -372,6 +413,15 @@ export function EditShowcaseDialog({
                 </div>
               ) : null}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <ShopTheLookEditor
+              imageUrl={afterPreviewUrl ?? item.afterUrl}
+              pins={pinsDraft}
+              onChange={setPinsDraft}
+              disabled={saving}
+            />
           </div>
 
           <div className="flex justify-end gap-3 border-t border-foreground/10 pt-5">

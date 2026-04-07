@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { MOCK_SHOWCASES } from "@/data/mock-showcase";
 import type { ShowcaseItem } from "@/types/showcase";
+import { serializePinsForPublic, type PinRow } from "@/lib/showcase-pins";
 
 function mapDbRow(
-  r: {
+  row: {
     id: string;
     title: string;
     category: string;
@@ -13,29 +14,69 @@ function mapDbRow(
     plusBudgetDetails: string | null;
     technicalPdfUrl: string | null;
     technicalPdfPublicId: string | null;
+    productPins: {
+      id: string;
+      positionX: number;
+      positionY: number;
+      name: string;
+      sortOrder: number;
+      offers: {
+        id: string;
+        storeName: string;
+        storeBrand: string;
+        thumbnailUrl: string | null;
+        priceLabel: string;
+        sortPrice: number;
+        buyUrl: string;
+        sortOrder: number;
+      }[];
+    }[];
   },
   viewerIsPlus: boolean,
 ): ShowcaseItem {
   const hasPdf = !!(
-    r.technicalPdfUrl?.trim() || r.technicalPdfPublicId?.trim()
+    row.technicalPdfUrl?.trim() || row.technicalPdfPublicId?.trim()
   );
-  const hasBudget = !!r.plusBudgetDetails?.trim();
+  const hasBudget = !!row.plusBudgetDetails?.trim();
+  const pinsOrdered = [...row.productPins].sort(
+    (a, b) => a.sortOrder - b.sortOrder,
+  );
+  const pinRows: PinRow[] = pinsOrdered.map((p) => ({
+    id: p.id,
+    positionX: p.positionX,
+    positionY: p.positionY,
+    name: p.name,
+    sortOrder: p.sortOrder,
+    offers: [...p.offers]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((o) => ({
+        id: o.id,
+        storeName: o.storeName,
+        storeBrand: o.storeBrand ?? "other",
+        thumbnailUrl: o.thumbnailUrl ?? null,
+        priceLabel: o.priceLabel,
+        sortPrice: o.sortPrice,
+        buyUrl: o.buyUrl,
+        sortOrder: o.sortOrder,
+      })),
+  }));
   return {
-    id: r.id,
-    title: r.title,
-    category: r.category,
-    description: r.description,
-    beforeUrl: r.beforeUrl,
-    afterUrl: r.afterUrl,
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    description: row.description,
+    beforeUrl: row.beforeUrl,
+    afterUrl: row.afterUrl,
     hasPremiumPdf: hasPdf,
     hasPremiumBudget: hasBudget,
-    plusBudgetDetails: viewerIsPlus ? r.plusBudgetDetails : null,
+    plusBudgetDetails: viewerIsPlus ? row.plusBudgetDetails : null,
+    shopPins: serializePinsForPublic(pinRows),
   };
 }
 
 /**
  * Home: si hay filas en BD, solo `isActive: true`.
- * `viewerIsPlus` controla si se envía el texto de presupuesto al HTML (nunca la URL del PDF).
+ * `viewerIsPlus` controla presupuesto en claro y datos de Shop the Look.
  */
 export async function getShowcasesForHome(
   viewerIsPlus: boolean,
@@ -46,6 +87,14 @@ export async function getShowcasesForHome(
       const rows = await prisma.showcase.findMany({
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+        include: {
+          productPins: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              offers: { orderBy: { sortOrder: "asc" } },
+            },
+          },
+        },
       });
       return rows.map((row) => mapDbRow(row, viewerIsPlus));
     }

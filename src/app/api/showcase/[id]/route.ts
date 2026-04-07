@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
+import { replaceShowcasePins } from "@/lib/showcase-pins";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -140,7 +141,23 @@ export async function PATCH(request: Request, context: RouteContext) {
     data.technicalPdfPublicId = nextPid;
   }
 
-  if (Object.keys(data).length === 0) {
+  let pinsHandled = false;
+  if ("pins" in body) {
+    try {
+      await replaceShowcasePins(id, body.pins);
+      pinsHandled = true;
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error ? err.message : "Pins inválidos",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (Object.keys(data).length === 0 && !pinsHandled) {
     return NextResponse.json(
       { error: "Nada que actualizar" },
       { status: 400 },
@@ -148,10 +165,26 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
-    const updated = await prisma.showcase.update({
+    if (Object.keys(data).length > 0) {
+      await prisma.showcase.update({
+        where: { id },
+        data,
+      });
+    }
+    const updated = await prisma.showcase.findUnique({
       where: { id },
-      data,
+      include: {
+        productPins: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            offers: { orderBy: { sortOrder: "asc" } },
+          },
+        },
+      },
     });
+    if (!updated) {
+      return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    }
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: "No se pudo actualizar" }, { status: 500 });

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ShopTheLookMarkers } from "@/components/landing/shop-the-look-markers";
+import type { ShopPinPublic } from "@/types/showcase";
 
 type Props = {
   beforeUrl: string;
@@ -14,6 +16,7 @@ type Props = {
   beforeBadgeLabel?: string;
   afterBadgeLabel?: string;
   className?: string;
+  shopPins?: ShopPinPublic[];
 };
 
 export function BeforeAfterSlider({
@@ -24,12 +27,14 @@ export function BeforeAfterSlider({
   beforeBadgeLabel = "Antes",
   afterBadgeLabel = "Propuesta de IA",
   className,
+  shopPins,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const rafRef = useRef<number | null>(null);
   const pendingX = useRef<number | null>(null);
   const [pct, setPct] = useState(50);
+  const [sliderLocked, setSliderLocked] = useState(false);
 
   const splitStyle = { left: `${pct}%` } as const;
 
@@ -71,11 +76,14 @@ export function BeforeAfterSlider({
         className,
       )}
       onPointerDown={(e) => {
+        if (sliderLocked) return;
+        if ((e.target as HTMLElement).closest("[data-shop-pin]")) return;
         dragging.current = true;
         wrapRef.current?.setPointerCapture(e.pointerId);
         scheduleClientX(e.clientX);
       }}
       onPointerMove={(e) => {
+        if (sliderLocked) return;
         if (!dragging.current) return;
         scheduleClientX(e.clientX);
       }}
@@ -127,8 +135,14 @@ export function BeforeAfterSlider({
 
       {/* Mango: envoltorio solo posiciona; el scale al pulsar va en un hijo para no pisar translate */}
       <div
-        className="pointer-events-auto absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none"
+        className={cn(
+          "absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 touch-none",
+          sliderLocked
+            ? "pointer-events-none cursor-not-allowed opacity-40"
+            : "pointer-events-auto cursor-ew-resize",
+        )}
         style={splitStyle}
+        aria-hidden={sliderLocked}
       >
         <motion.div
           whileTap={{ scale: 0.97 }}
@@ -173,6 +187,16 @@ export function BeforeAfterSlider({
       <span className="pointer-events-none absolute right-4 top-4 z-[1] max-w-[52%] rounded-full bg-black/45 px-3 py-1 text-right text-[10px] font-medium leading-tight text-white backdrop-blur-md sm:text-xs">
         {afterBadgeLabel}
       </span>
+
+      {shopPins?.length ? (
+        <ShopTheLookMarkers
+          pins={shopPins}
+          variant="full"
+          clipLeftPct={pct}
+          className="z-[25]"
+          onSlideInteractionLockChange={setSliderLocked}
+        />
+      ) : null}
     </div>
   );
 }

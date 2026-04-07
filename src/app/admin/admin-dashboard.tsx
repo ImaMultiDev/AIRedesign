@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,7 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditShowcaseDialog } from "@/app/admin/edit-showcase-dialog";
+import {
+  ShopTheLookEditor,
+  serializePinsForApi,
+  type ShopTheLookDraftPin,
+} from "@/app/admin/shop-the-look-editor";
 import { uploadImageWithProgress } from "@/lib/upload-with-progress";
+import { productPinsFromApiResponse } from "@/lib/admin-showcase-pins";
 import type { AdminShowcaseRow } from "@/types/admin-showcase";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, PencilLine, Trash2 } from "lucide-react";
@@ -40,6 +46,22 @@ export function AdminDashboard({ initialItems }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<AdminShowcaseRow | null>(null);
+  const [createPins, setCreatePins] = useState<ShopTheLookDraftPin[]>([]);
+  const [afterPreviewUrl, setAfterPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!afterFile) {
+      setAfterPreviewUrl(null);
+      return;
+    }
+    const u = URL.createObjectURL(afterFile);
+    setAfterPreviewUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [afterFile]);
+
+  useEffect(() => {
+    setCreatePins([]);
+  }, [afterFile]);
 
   function openEdit(row: AdminShowcaseRow) {
     setEditTarget(row);
@@ -86,6 +108,12 @@ export function AdminDashboard({ initialItems }: Props) {
     }
     if (!title.trim() || !category.trim()) {
       toast.error("Título y categoría son obligatorios.");
+      return;
+    }
+
+    const pinsSerialized = serializePinsForApi(createPins);
+    if (!pinsSerialized.ok) {
+      toast.error(pinsSerialized.message);
       return;
     }
 
@@ -143,6 +171,9 @@ export function AdminDashboard({ initialItems }: Props) {
           plusBudgetDetails: galleryPlusBudget.trim() || null,
           technicalPdfUrl,
           technicalPdfPublicId,
+          ...(pinsSerialized.payload.length > 0
+            ? { pins: pinsSerialized.payload }
+            : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -165,6 +196,7 @@ export function AdminDashboard({ initialItems }: Props) {
         technicalPdfUrl: data.technicalPdfUrl ?? null,
         technicalPdfPublicId: data.technicalPdfPublicId ?? null,
         isActive: data.isActive ?? true,
+        productPins: productPinsFromApiResponse(data.productPins),
       };
       setItems((prev) => [row, ...prev]);
       setTitle("");
@@ -174,6 +206,7 @@ export function AdminDashboard({ initialItems }: Props) {
       setGalleryPdfFile(null);
       setBeforeFile(null);
       setAfterFile(null);
+      setCreatePins([]);
       toast.success("Ejemplo creado y subido a Cloudinary");
       router.refresh();
     } catch (err) {
@@ -349,6 +382,15 @@ export function AdminDashboard({ initialItems }: Props) {
                 </div>
               </div>
 
+              {afterPreviewUrl ? (
+                <ShopTheLookEditor
+                  imageUrl={afterPreviewUrl}
+                  pins={createPins}
+                  onChange={setCreatePins}
+                  disabled={saving}
+                />
+              ) : null}
+
               {(progressBefore !== null || progressAfter !== null) && (
                 <div className="space-y-4 rounded-xl border border-foreground/10 bg-muted/20 p-4">
                   <p className="text-xs font-medium text-muted-foreground">
@@ -441,6 +483,12 @@ export function AdminDashboard({ initialItems }: Props) {
                     {(row.technicalPdfUrl || row.plusBudgetDetails) ? (
                       <p className="text-[11px] font-medium text-primary">
                         Incluye contenido Plus en galería (PDF / presupuesto)
+                      </p>
+                    ) : null}
+                    {row.productPins?.length ? (
+                      <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                        Shop the Look · {row.productPins.length} etiqueta
+                        {row.productPins.length === 1 ? "" : "s"}
                       </p>
                     ) : null}
                   </div>

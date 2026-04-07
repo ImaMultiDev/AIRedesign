@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Sparkles, FileText, PieChart, Crown } from "lucide-react";
 
 type Props = {
@@ -29,15 +30,21 @@ export function PlusUpsellModal({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg overflow-hidden border-foreground/10 bg-gradient-to-b from-background to-muted/40 p-0 shadow-2xl sm:rounded-3xl">
+      <DialogContent
+        showCloseButton
+        overlayClassName="z-[240] bg-black/70 supports-backdrop-filter:backdrop-blur-md"
+        className={cn(
+          "z-[250] max-w-lg overflow-hidden border-foreground/15 bg-background p-0 shadow-2xl sm:rounded-3xl",
+        )}
+      >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">
           Ventajas del plan Plus y llamada a suscribirse
         </DialogDescription>
 
-        <div className="relative px-8 pb-8 pt-10 sm:px-10">
+        <div className="relative bg-background px-8 pb-8 pt-10 sm:px-10">
           <div
-            className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-primary/[0.12] blur-3xl"
+            className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full bg-primary/[0.18] blur-3xl"
             aria-hidden
           />
           <motion.div

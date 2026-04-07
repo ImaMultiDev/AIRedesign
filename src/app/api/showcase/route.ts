@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getShowcasesForHome } from "@/lib/showcase-data";
+import { replaceShowcasePins } from "@/lib/showcase-pins";
 
 /** Público: mismos datos que la home (DB o mock), según sesión Plus. */
 export async function GET() {
@@ -87,7 +88,32 @@ export async function POST(request: Request) {
         isActive,
       },
     });
-    return NextResponse.json(created);
+    if ("pins" in b) {
+      try {
+        await replaceShowcasePins(created.id, b.pins);
+      } catch (err) {
+        await prisma.showcase.delete({ where: { id: created.id } }).catch(() => {});
+        return NextResponse.json(
+          {
+            error:
+              err instanceof Error ? err.message : "Pins inválidos",
+          },
+          { status: 400 },
+        );
+      }
+    }
+    const full = await prisma.showcase.findUnique({
+      where: { id: created.id },
+      include: {
+        productPins: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            offers: { orderBy: { sortOrder: "asc" } },
+          },
+        },
+      },
+    });
+    return NextResponse.json(full ?? created);
   } catch {
     return NextResponse.json({ error: "No se pudo guardar" }, { status: 500 });
   }

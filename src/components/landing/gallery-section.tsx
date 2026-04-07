@@ -89,8 +89,12 @@ export function GallerySection({ items }: Props) {
             <p className="text-lg text-muted-foreground">
               Cada tarjeta es un proyecto real de estilo. Abre el comparador
               a pantalla completa y arrastra para revelar la propuesta de IA.
-              Donde haya ficha técnica o presupuesto, el acceso completo está
-              reservado al plan Plus.
+              Al abrir un proyecto,{" "}
+              <span className="text-foreground/90">Shop the Look</span> muestra en la
+              propuesta IA el comparador multi-tienda (mejor oferta resaltada) como
+              muestra del trabajo. Donde haya ficha técnica
+              o presupuesto, el acceso completo también está reservado al plan
+              Plus.
             </p>
           </motion.div>
 
@@ -172,11 +176,10 @@ export function GallerySection({ items }: Props) {
                                 title={item.title}
                                 sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
                               />
-                              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-95" />
-                              <span className="absolute bottom-4 left-4 rounded-full bg-white/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
+                              <span className="absolute bottom-4 left-4 z-30 rounded-full bg-white/15 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur-md">
                                 {item.category}
                               </span>
-                              <span className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100 scale-90">
+                              <span className="absolute right-4 top-4 z-30 flex size-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow-md opacity-0 transition-all duration-300 group-hover:scale-100 group-hover:opacity-100 scale-90">
                                 <ArrowUpRight className="size-5" aria-hidden />
                               </span>
                             </div>

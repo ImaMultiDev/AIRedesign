@@ -9,6 +9,7 @@ const premiumDefaults = {
   hasPremiumPdf: false,
   hasPremiumBudget: false,
   plusBudgetDetails: null as string | null,
+  shopPins: [] as ShowcaseItem["shopPins"],
 };
 
 export const MOCK_SHOWCASES: ShowcaseItem[] = [
